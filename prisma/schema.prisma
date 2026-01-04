@@ -1,0 +1,235 @@
+// VibePM Database Schema
+// A project management tool for AI-assisted development
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// CORE ENTITIES
+// =============================================================================
+
+model Project {
+  id            String        @id @default(cuid())
+  name          String
+  slug          String        @unique
+  problem       String?       // What problem does this solve?
+  mvpDefinition String?       // What does DONE look like?
+  status        String        @default("PLANNING") // PLANNING, ACTIVE, PAUSED, COMPLETED, ARCHIVED
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  // Relations
+  phases        Phase[]
+  tasks         Task[]
+  decisions     Decision[]
+  images        Image[]
+  prompts       Prompt[]
+  contextDoc    ContextDocument?
+  moodBoard     MoodBoard?
+}
+
+model Phase {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  order       Int
+  status      String   @default("NOT_STARTED") // NOT_STARTED, IN_PROGRESS, COMPLETED
+
+  tasks       Task[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Task {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  phaseId     String?
+  phase       Phase?   @relation(fields: [phaseId], references: [id], onDelete: SetNull)
+
+  title       String
+  description String?
+  complexity  String   @default("MEDIUM") // SMALL, MEDIUM, LARGE, EXTRA_LARGE
+  valueScore  Int?     // 1-5
+  easeScore   Int?     // 1-5
+  priority    Int?     // Computed: value x ease
+  status      String   @default("TODO") // TODO, IN_PROGRESS, BLOCKED, COMPLETED, CANCELLED
+  order       Int      @default(0)
+
+  // AI-Native
+  prompts     Prompt[]
+  snippets    CodeSnippet[]
+  images      Image[]
+
+  // Session tracking
+  sessions    Session[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Task dependencies (many-to-many self-relation)
+model TaskDependency {
+  id            String   @id @default(cuid())
+  blockingTaskId String
+  blockedTaskId  String
+  createdAt     DateTime @default(now())
+
+  @@unique([blockingTaskId, blockedTaskId])
+}
+
+// =============================================================================
+// AI-NATIVE: PROMPT VERSIONING SYSTEM
+// =============================================================================
+
+model Prompt {
+  id          String   @id @default(cuid())
+  taskId      String?
+  task        Task?    @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  projectId   String?
+  project     Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  title       String   // "Initial setup prompt", "Bug fix attempt"
+  content     String   // The actual prompt text
+  version     Int      @default(1)
+  parentId    String?  // Links to previous version (fork-based versioning)
+  parent      Prompt?  @relation("PromptVersions", fields: [parentId], references: [id], onDelete: SetNull)
+  children    Prompt[] @relation("PromptVersions")
+
+  // Effectiveness tracking
+  outcome     String?  // WORKED, PARTIAL, FAILED
+  notes       String?  // What happened? Why did it work/fail?
+
+  // Template support
+  isTemplate  Boolean  @default(false)
+  variables   String?  // JSON: {variableName: "description"}
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CodeSnippet {
+  id          String   @id @default(cuid())
+  taskId      String?
+  task        Task?    @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  promptId    String?  // Which prompt generated this?
+
+  title       String
+  language    String
+  code        String
+  intent      String?  // What was this supposed to do?
+  notes       String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// =============================================================================
+// DECISION TRACKING
+// =============================================================================
+
+model Decision {
+  id           String   @id @default(cuid())
+  projectId    String
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  title        String   // "Chose SQLite over PostgreSQL"
+  context      String   // Why was this decision needed?
+  decision     String   // What we decided
+  reasoning    String   // Why we decided this
+  alternatives String?  // What we considered
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// =============================================================================
+// IMAGE & VISUAL MANAGEMENT
+// =============================================================================
+
+model Image {
+  id          String     @id @default(cuid())
+  projectId   String?
+  project     Project?   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  taskId      String?
+  task        Task?      @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  moodBoardId String?
+  moodBoard   MoodBoard? @relation(fields: [moodBoardId], references: [id], onDelete: SetNull)
+
+  filename    String
+  path        String     // Local path or R2 key
+  caption     String?
+  imageType   String     @default("REFERENCE") // SCREENSHOT, MOCKUP, INSPIRATION, REFERENCE
+
+  createdAt   DateTime   @default(now())
+}
+
+model MoodBoard {
+  id        String   @id @default(cuid())
+  projectId String   @unique
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  images    Image[]
+  notes     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// =============================================================================
+// CONTEXT & SESSION TRACKING
+// =============================================================================
+
+model ContextDocument {
+  id            String   @id @default(cuid())
+  projectId     String   @unique
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  content       String   // Markdown - auto-generated + manually editable
+  lastGenerated DateTime @default(now())
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Session {
+  id           String    @id @default(cuid())
+  taskId       String
+  task         Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  startedAt    DateTime  @default(now())
+  endedAt      DateTime?
+
+  // Retrospective
+  whatWorked   String?
+  whatFailed   String?
+  scopeChanges String?
+  nextSteps    String?
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+// =============================================================================
+// QUICK CAPTURE (for ideas captured mid-flow)
+// =============================================================================
+
+model QuickCapture {
+  id        String   @id @default(cuid())
+  content   String   // The raw idea/note
+  projectId String?  // Optional: link to project later
+
+  // Can be promoted to a task later
+  promotedToTaskId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

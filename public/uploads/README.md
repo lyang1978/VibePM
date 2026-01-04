@@ -1,0 +1,1 @@
+# Uploads Directory\n\nThis directory stores uploaded images for VibePM projects.\n\nStructure:\n- /projects/{projectId}/ - Project images\n- /tasks/{taskId}/ - Task-specific images\n- /moodboards/{projectId}/ - Mood board images
