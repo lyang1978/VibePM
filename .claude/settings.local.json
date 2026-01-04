@@ -15,7 +15,8 @@
       "Bash(git init:*)",
       "Bash(git config:*)",
       "Bash(git add:*)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial commit: VibePM Phase 1 Foundation\n\nProject management tool for AI-assisted development \\(\"vibe coding\"\\):\n\n- Next.js 16 with App Router, TypeScript, Tailwind CSS v4\n- Prisma ORM with SQLite \\(11 models for projects, tasks, prompts, etc.\\)\n- shadcn/ui components with brutalist styling\n- Dark mode support with next-themes\n- Command palette \\(Cmd+K\\) with keyboard shortcuts\n\nPages:\n- Dashboard with quick actions and stats\n- Projects list with search\n- New project wizard \\(Problem → MVP → Visuals\\)\n- Project detail with Tasks, Prompts, Context tabs\n\nFeatures:\n- Image upload with drag-drop and clipboard paste\n- Context document export for Claude sessions\n- Task board with kanban columns\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial commit: VibePM Phase 1 Foundation\n\nProject management tool for AI-assisted development \\(\"vibe coding\"\\):\n\n- Next.js 16 with App Router, TypeScript, Tailwind CSS v4\n- Prisma ORM with SQLite \\(11 models for projects, tasks, prompts, etc.\\)\n- shadcn/ui components with brutalist styling\n- Dark mode support with next-themes\n- Command palette \\(Cmd+K\\) with keyboard shortcuts\n\nPages:\n- Dashboard with quick actions and stats\n- Projects list with search\n- New project wizard \\(Problem → MVP → Visuals\\)\n- Project detail with Tasks, Prompts, Context tabs\n\nFeatures:\n- Image upload with drag-drop and clipboard paste\n- Context document export for Claude sessions\n- Task board with kanban columns\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(gh repo create:*)"
     ]
   }
 }
