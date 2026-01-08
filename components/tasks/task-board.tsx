@@ -57,7 +57,7 @@ const complexityLabels: Record<string, string> = {
   EXTRA_LARGE: "XL",
 };
 
-export function TaskBoard({ projectSlug, tasks, phases }: TaskBoardProps) {
+export function TaskBoard({ tasks }: TaskBoardProps) {
   const getTasksByStatus = (status: string) =>
     tasks.filter((task) => task.status === status);
 

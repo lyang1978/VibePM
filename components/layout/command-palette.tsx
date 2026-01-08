@@ -10,8 +10,6 @@ import {
   Settings,
   Moon,
   Sun,
-  FileText,
-  Search,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import {
@@ -31,7 +29,7 @@ interface CommandPaletteProps {
 
 export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const router = useRouter();
-  const { setTheme, theme } = useTheme();
+  const { setTheme } = useTheme();
 
   const runCommand = React.useCallback(
     (command: () => void) => {

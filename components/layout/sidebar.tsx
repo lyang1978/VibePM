@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { AIDropZone } from "@/components/shared/ai-drop-zone";
 
 interface NavItem {
   title: string;
@@ -122,6 +123,11 @@ export function Sidebar() {
           ))}
         </div>
       </ScrollArea>
+
+      {/* AI Analysis Drop Zone */}
+      <div className="border-t-2 border-foreground/20 px-1 py-3">
+        <AIDropZone />
+      </div>
 
       {/* Settings */}
       <div className="border-t-2 border-foreground p-3">

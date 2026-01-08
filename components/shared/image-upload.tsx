@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ImageIcon, X, Upload } from "lucide-react";
+import { X, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -52,7 +52,7 @@ export function ImageUpload({
 
     document.addEventListener("paste", handlePaste);
     return () => document.removeEventListener("paste", handlePaste);
-  }, [images]);
+  }, [images, maxImages, onImagesChange]);
 
   const addImages = (newImages: File[]) => {
     const combined = [...images, ...newImages].slice(0, maxImages);

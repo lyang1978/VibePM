@@ -1,7 +1,8 @@
-import { Plus, Zap, FolderKanban, Clock, ArrowRight } from "lucide-react";
+import { Plus, FolderKanban, Clock, ArrowRight, Zap } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { QuickCapture } from "@/components/shared/quick-capture";
 
 export default function DashboardPage() {
   return (
@@ -15,7 +16,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick Actions Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2">
         {/* New Project Card */}
         <Link href="/projects/new">
           <Card className="card-brutalist cursor-pointer transition-all hover:translate-x-1 hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.8)]">
@@ -32,21 +33,6 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </Link>
-
-        {/* Quick Capture Card */}
-        <Card className="card-brutalist cursor-pointer transition-all hover:translate-x-1 hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.8)]">
-          <CardHeader className="pb-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg gradient-blue">
-              <Zap className="h-5 w-5 text-white" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <CardTitle className="text-lg">Quick Capture</CardTitle>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Brain dump an idea in 30 seconds or less
-            </p>
-          </CardContent>
-        </Card>
 
         {/* Browse Projects Card */}
         <Link href="/projects">
@@ -65,6 +51,9 @@ export default function DashboardPage() {
           </Card>
         </Link>
       </div>
+
+      {/* Quick Capture Section */}
+      <QuickCapture />
 
       {/* Recent Activity Section */}
       <div className="space-y-4">
