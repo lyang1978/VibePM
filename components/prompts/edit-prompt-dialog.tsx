@@ -180,12 +180,12 @@ export function EditPromptDialog({ prompt, open, onOpenChange }: EditPromptDialo
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="edit-prompt-outcome">Outcome</Label>
-                  <Select value={outcome} onValueChange={setOutcome}>
+                  <Select value={outcome || "NOT_TESTED"} onValueChange={(val) => setOutcome(val === "NOT_TESTED" ? "" : val)}>
                     <SelectTrigger>
                       <SelectValue placeholder="How did it go?" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Not tested yet</SelectItem>
+                      <SelectItem value="NOT_TESTED">Not tested yet</SelectItem>
                       <SelectItem value="WORKED">Worked</SelectItem>
                       <SelectItem value="PARTIAL">Partial</SelectItem>
                       <SelectItem value="FAILED">Failed</SelectItem>

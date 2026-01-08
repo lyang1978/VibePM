@@ -82,6 +82,15 @@ export function RecentlyDeleted() {
     fetchDeleted();
   }, [fetchDeleted]);
 
+  // Listen for delete events from QuickCapture
+  React.useEffect(() => {
+    const handleCaptureDeleted = () => {
+      fetchDeleted();
+    };
+    window.addEventListener("capture-deleted", handleCaptureDeleted);
+    return () => window.removeEventListener("capture-deleted", handleCaptureDeleted);
+  }, [fetchDeleted]);
+
   const handleRestore = async (type: "project" | "capture", id: string, slug?: string) => {
     setRestoringId(id);
     try {
@@ -97,6 +106,8 @@ export function RecentlyDeleted() {
           setDeletedProjects((prev) => prev.filter((p) => p.id !== id));
         } else {
           setDeletedCaptures((prev) => prev.filter((c) => c.id !== id));
+          // Notify QuickCapture to refresh
+          window.dispatchEvent(new CustomEvent("capture-restored"));
         }
       }
     } catch (error) {

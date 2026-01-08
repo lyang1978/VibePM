@@ -66,6 +66,15 @@ export function QuickCapture() {
     fetchCaptures();
   }, []);
 
+  // Listen for restore events from RecentlyDeleted
+  React.useEffect(() => {
+    const handleCaptureRestored = () => {
+      fetchCaptures();
+    };
+    window.addEventListener("capture-restored", handleCaptureRestored);
+    return () => window.removeEventListener("capture-restored", handleCaptureRestored);
+  }, []);
+
   // Register callback for when AI analysis appends to cards
   React.useEffect(() => {
     setOnCardsUpdated(() => fetchCaptures);
@@ -125,6 +134,8 @@ export function QuickCapture() {
 
     try {
       await fetch(`/api/quick-capture/${id}`, { method: "DELETE" });
+      // Notify RecentlyDeleted to refresh
+      window.dispatchEvent(new CustomEvent("capture-deleted"));
     } catch (error) {
       console.error("Failed to delete capture:", error);
       // Refetch on error to restore state
