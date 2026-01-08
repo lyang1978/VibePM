@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Sparkles, X, Loader2, Send } from "lucide-react";
+import { Sparkles, X, Loader2, Send, History, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -9,22 +9,43 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAIAnalysis } from "./ai-analysis-context";
 import { cn } from "@/lib/utils";
 
 interface AnalysisResult {
   originalItems: { id: string; content: string }[];
   analysis: string;
+  timestamp: number;
 }
 
 export function AIDropZone() {
-  const { droppedItems, removeItem, clearItems, isDragging } = useAIAnalysis();
+  const { droppedItems, removeItem, clearItems, isDragging, onCardsUpdated } = useAIAnalysis();
   const [isOver, setIsOver] = React.useState(false);
   const [isAnalyzing, setIsAnalyzing] = React.useState(false);
+  const [isAppending, setIsAppending] = React.useState(false);
   const [showResults, setShowResults] = React.useState(false);
   const [analysisResult, setAnalysisResult] = React.useState<AnalysisResult | null>(null);
+  const [analysisHistory, setAnalysisHistory] = React.useState<AnalysisResult[]>([]);
   const [error, setError] = React.useState<string | null>(null);
+
+  // Load history from localStorage on mount
+  React.useEffect(() => {
+    const saved = localStorage.getItem("ai-analysis-history");
+    if (saved) {
+      try {
+        setAnalysisHistory(JSON.parse(saved));
+      } catch {
+        // Invalid JSON, ignore
+      }
+    }
+  }, []);
+
+  // Save history to localStorage when it changes
+  const saveToHistory = (result: AnalysisResult) => {
+    const newHistory = [result, ...analysisHistory].slice(0, 10); // Keep last 10
+    setAnalysisHistory(newHistory);
+    localStorage.setItem("ai-analysis-history", JSON.stringify(newHistory));
+  };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -61,12 +82,54 @@ export function AIDropZone() {
       }
 
       const result = await response.json();
-      setAnalysisResult(result);
+      const resultWithTimestamp = { ...result, timestamp: Date.now() };
+      setAnalysisResult(resultWithTimestamp);
+      saveToHistory(resultWithTimestamp);
       setShowResults(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to analyze ideas");
     } finally {
       setIsAnalyzing(false);
+    }
+  };
+
+  const viewHistoryItem = (item: AnalysisResult) => {
+    setAnalysisResult(item);
+    setShowResults(true);
+  };
+
+  const appendToCards = async () => {
+    if (!analysisResult) return;
+
+    setIsAppending(true);
+    try {
+      // Update each original card with the AI analysis appended
+      const AI_MARKER = "\n\n---\n✨ AI Analysis:\n";
+
+      for (const item of analysisResult.originalItems) {
+        // Check if the card already has AI analysis (don't append twice)
+        if (item.content.includes("✨ AI Analysis:")) continue;
+
+        const updatedContent = item.content + AI_MARKER + analysisResult.analysis;
+
+        await fetch(`/api/quick-capture/${item.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content: updatedContent }),
+        });
+      }
+
+      // Notify QuickCapture to refresh
+      if (onCardsUpdated) {
+        onCardsUpdated();
+      }
+
+      setShowResults(false);
+      clearItems();
+    } catch (err) {
+      console.error("Failed to append AI analysis:", err);
+    } finally {
+      setIsAppending(false);
     }
   };
 
@@ -151,21 +214,40 @@ export function AIDropZone() {
             </div>
           )}
         </div>
+
+        {/* History Button */}
+        {analysisHistory.length > 0 && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="w-full h-7 text-xs gap-1 mx-2"
+            style={{ width: "calc(100% - 16px)" }}
+            onClick={() => viewHistoryItem(analysisHistory[0])}
+          >
+            <History className="h-3 w-3" />
+            View Last Analysis
+          </Button>
+        )}
       </div>
 
       {/* Results Dialog */}
       <Dialog open={showResults} onOpenChange={setShowResults}>
-        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
-          <DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col overflow-hidden">
+          <DialogHeader className="shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5" />
               AI Analysis Results
+              {analysisResult?.timestamp && (
+                <span className="text-xs font-normal text-muted-foreground ml-auto">
+                  {new Date(analysisResult.timestamp).toLocaleString()}
+                </span>
+              )}
             </DialogTitle>
           </DialogHeader>
 
-          <ScrollArea className="flex-1 pr-4">
+          <div className="flex-1 overflow-y-auto pr-2 min-h-0">
             {analysisResult && (
-              <div className="space-y-6">
+              <div className="space-y-6 pb-4">
                 {/* Original Ideas */}
                 <div className="space-y-2">
                   <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
@@ -199,11 +281,24 @@ export function AIDropZone() {
                 </div>
               </div>
             )}
-          </ScrollArea>
+          </div>
 
-          <div className="flex justify-end gap-2 pt-4 border-t">
+          <div className="flex justify-end gap-2 pt-4 border-t shrink-0">
             <Button variant="outline" onClick={() => setShowResults(false)}>
               Close
+            </Button>
+            <Button
+              variant="outline"
+              onClick={appendToCards}
+              disabled={isAppending}
+              className="gap-1"
+            >
+              {isAppending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Plus className="h-4 w-4" />
+              )}
+              Add to Cards
             </Button>
             <Button
               onClick={() => {

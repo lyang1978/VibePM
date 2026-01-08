@@ -16,6 +16,8 @@ interface AIAnalysisContextType {
   clearItems: () => void;
   isDragging: boolean;
   setIsDragging: (dragging: boolean) => void;
+  onCardsUpdated: (() => void) | null;
+  setOnCardsUpdated: (callback: (() => void) | null) => void;
 }
 
 const AIAnalysisContext = React.createContext<AIAnalysisContextType | null>(null);
@@ -23,6 +25,7 @@ const AIAnalysisContext = React.createContext<AIAnalysisContextType | null>(null
 export function AIAnalysisProvider({ children }: { children: React.ReactNode }) {
   const [droppedItems, setDroppedItems] = React.useState<QuickCaptureItem[]>([]);
   const [isDragging, setIsDragging] = React.useState(false);
+  const [onCardsUpdated, setOnCardsUpdated] = React.useState<(() => void) | null>(null);
 
   const addItem = React.useCallback((item: QuickCaptureItem) => {
     setDroppedItems((prev) => {
@@ -42,7 +45,7 @@ export function AIAnalysisProvider({ children }: { children: React.ReactNode }) 
 
   return (
     <AIAnalysisContext.Provider
-      value={{ droppedItems, addItem, removeItem, clearItems, isDragging, setIsDragging }}
+      value={{ droppedItems, addItem, removeItem, clearItems, isDragging, setIsDragging, onCardsUpdated, setOnCardsUpdated }}
     >
       {children}
     </AIAnalysisContext.Provider>

@@ -23,12 +23,18 @@ export function QuickCapture() {
   const [editContent, setEditContent] = React.useState("");
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
   const editRef = React.useRef<HTMLTextAreaElement>(null);
-  const { addItem, setIsDragging } = useAIAnalysis();
+  const { addItem, setIsDragging, setOnCardsUpdated } = useAIAnalysis();
 
   // Fetch captures on mount
   React.useEffect(() => {
     fetchCaptures();
   }, []);
+
+  // Register callback for when AI analysis appends to cards
+  React.useEffect(() => {
+    setOnCardsUpdated(() => fetchCaptures);
+    return () => setOnCardsUpdated(null);
+  }, [setOnCardsUpdated]);
 
   const fetchCaptures = async () => {
     setIsLoading(true);
