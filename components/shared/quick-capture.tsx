@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Zap, X, Loader2, GripVertical, Pencil, Check } from "lucide-react";
+import { Zap, X, Loader2, GripVertical, Pencil, Check, Eye, EyeOff } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
@@ -21,9 +21,37 @@ export function QuickCapture() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [editContent, setEditContent] = React.useState("");
+  const [expandedAnalysis, setExpandedAnalysis] = React.useState<Set<string>>(new Set());
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
   const editRef = React.useRef<HTMLTextAreaElement>(null);
   const { addItem, setIsDragging, setOnCardsUpdated } = useAIAnalysis();
+
+  const AI_MARKER = "\n\n---\n✨ AI Analysis:\n";
+
+  // Helper to parse content into original and analysis parts
+  const parseContent = (content: string) => {
+    const markerIndex = content.indexOf(AI_MARKER);
+    if (markerIndex === -1) {
+      return { original: content, analysis: null };
+    }
+    return {
+      original: content.substring(0, markerIndex),
+      analysis: content.substring(markerIndex + AI_MARKER.length),
+    };
+  };
+
+  // Toggle analysis visibility
+  const toggleAnalysis = (id: string) => {
+    setExpandedAnalysis((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
 
   // Fetch captures on mount
   React.useEffect(() => {
@@ -99,6 +127,8 @@ export function QuickCapture() {
   const startEditing = (capture: QuickCaptureItem) => {
     setEditingId(capture.id);
     setEditContent(capture.content);
+    // Auto-expand analysis when editing
+    setExpandedAnalysis((prev) => new Set(prev).add(capture.id));
     // Focus the edit textarea after render
     setTimeout(() => editRef.current?.focus(), 0);
   };
@@ -119,6 +149,12 @@ export function QuickCapture() {
       prev.map((c) => (c.id === id ? { ...c, content: editContent.trim() } : c))
     );
     setEditingId(null);
+    // Auto-collapse analysis after editing
+    setExpandedAnalysis((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
 
     try {
       await fetch(`/api/quick-capture/${id}`, {
@@ -188,86 +224,117 @@ export function QuickCapture() {
               No ideas captured yet. Start typing above!
             </p>
           ) : (
-            captures.map((capture) => (
-              <div
-                key={capture.id}
-                draggable={editingId !== capture.id}
-                onDragStart={(e) => {
-                  if (editingId === capture.id) {
-                    e.preventDefault();
-                    return;
-                  }
-                  e.dataTransfer.setData("application/json", JSON.stringify(capture));
-                  e.dataTransfer.effectAllowed = "copy";
-                  setIsDragging(true);
-                }}
-                onDragEnd={() => {
-                  setIsDragging(false);
-                  // Add to AI analysis on successful drop
-                  addItem(capture);
-                }}
-                className={`group flex items-start gap-2 rounded-lg border-2 border-foreground/20 bg-muted/30 p-3 transition-colors hover:border-foreground/40 ${
-                  editingId === capture.id ? "cursor-text" : "cursor-grab active:cursor-grabbing"
-                }`}
-              >
-                {editingId !== capture.id && (
-                  <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
-                )}
-                <div className="flex-1 min-w-0">
+            captures.map((capture) => {
+              const { original, analysis } = parseContent(capture.content);
+              const hasAnalysis = analysis !== null;
+              const isExpanded = expandedAnalysis.has(capture.id);
+
+              return (
+                <div
+                  key={capture.id}
+                  draggable={editingId !== capture.id}
+                  onDragStart={(e) => {
+                    if (editingId === capture.id) {
+                      e.preventDefault();
+                      return;
+                    }
+                    e.dataTransfer.setData("application/json", JSON.stringify(capture));
+                    e.dataTransfer.effectAllowed = "copy";
+                    setIsDragging(true);
+                  }}
+                  onDragEnd={() => {
+                    setIsDragging(false);
+                    // Add to AI analysis on successful drop
+                    addItem(capture);
+                  }}
+                  className={`group flex items-start gap-2 rounded-lg border-2 border-foreground/20 bg-muted/30 p-3 transition-colors hover:border-foreground/40 ${
+                    editingId === capture.id ? "cursor-text" : "cursor-grab active:cursor-grabbing"
+                  }`}
+                >
+                  {editingId !== capture.id && (
+                    <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    {editingId === capture.id ? (
+                      <textarea
+                        ref={editRef}
+                        value={editContent}
+                        onChange={(e) => setEditContent(e.target.value)}
+                        onKeyDown={(e) => handleEditKeyDown(e, capture.id)}
+                        onBlur={() => handleUpdate(capture.id)}
+                        className="w-full resize-none rounded border-2 border-foreground bg-background p-2 text-sm focus:outline-none focus:ring-2 focus:ring-foreground/20"
+                        rows={Math.max(2, editContent.split("\n").length)}
+                      />
+                    ) : (
+                      <>
+                        <p className="text-sm whitespace-pre-wrap break-words">
+                          {original}
+                        </p>
+                        {hasAnalysis && isExpanded && (
+                          <div className="mt-2 pt-2 border-t border-foreground/10">
+                            <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                              ✨ AI Analysis
+                            </p>
+                            <p className="text-sm whitespace-pre-wrap break-words text-muted-foreground">
+                              {analysis}
+                            </p>
+                          </div>
+                        )}
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {formatDistanceToNow(new Date(capture.createdAt), {
+                            addSuffix: true,
+                          })}
+                        </p>
+                      </>
+                    )}
+                  </div>
                   {editingId === capture.id ? (
-                    <textarea
-                      ref={editRef}
-                      value={editContent}
-                      onChange={(e) => setEditContent(e.target.value)}
-                      onKeyDown={(e) => handleEditKeyDown(e, capture.id)}
-                      onBlur={() => handleUpdate(capture.id)}
-                      className="w-full resize-none rounded border-2 border-foreground bg-background p-2 text-sm focus:outline-none focus:ring-2 focus:ring-foreground/20"
-                      rows={Math.max(2, editContent.split("\n").length)}
-                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 shrink-0"
+                      onClick={() => handleUpdate(capture.id)}
+                    >
+                      <Check className="h-3 w-3" />
+                    </Button>
                   ) : (
-                    <>
-                      <p className="text-sm whitespace-pre-wrap break-words">
-                        {capture.content}
-                      </p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(capture.createdAt), {
-                          addSuffix: true,
-                        })}
-                      </p>
-                    </>
+                    <div className="flex shrink-0 gap-1">
+                      {hasAnalysis && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => toggleAnalysis(capture.id)}
+                          title={isExpanded ? "Hide AI analysis" : "Show AI analysis"}
+                        >
+                          {isExpanded ? (
+                            <EyeOff className="h-3 w-3" />
+                          ) : (
+                            <Eye className="h-3 w-3" />
+                          )}
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
+                        onClick={() => startEditing(capture)}
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
+                        onClick={() => handleDelete(capture.id)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
                   )}
                 </div>
-                {editingId === capture.id ? (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 shrink-0"
-                    onClick={() => handleUpdate(capture.id)}
-                  >
-                    <Check className="h-3 w-3" />
-                  </Button>
-                ) : (
-                  <div className="flex shrink-0 gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
-                      onClick={() => startEditing(capture)}
-                    >
-                      <Pencil className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
-                      onClick={() => handleDelete(capture.id)}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </CardContent>
