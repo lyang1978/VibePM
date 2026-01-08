@@ -5,6 +5,15 @@ export async function GET() {
   try {
     const captures = await db.quickCapture.findMany({
       orderBy: { createdAt: "desc" },
+      include: {
+        project: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
     });
     return NextResponse.json(captures);
   } catch (error) {

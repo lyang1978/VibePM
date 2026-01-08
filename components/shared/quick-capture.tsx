@@ -1,17 +1,24 @@
 "use client";
 
 import * as React from "react";
-import { Zap, X, Loader2, GripVertical, Pencil, Check, Eye, EyeOff } from "lucide-react";
+import { Zap, X, Loader2, GripVertical, Pencil, Check, Eye, EyeOff, Rocket, ExternalLink } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
 import { useAIAnalysis } from "./ai-analysis-context";
+import { PromoteToProject } from "./promote-to-project";
+import Link from "next/link";
 
 export interface QuickCaptureItem {
   id: string;
   content: string;
   projectId: string | null;
   createdAt: string;
+  project?: {
+    id: string;
+    name: string;
+    slug: string;
+  } | null;
 }
 
 export function QuickCapture() {
@@ -22,6 +29,7 @@ export function QuickCapture() {
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [editContent, setEditContent] = React.useState("");
   const [expandedAnalysis, setExpandedAnalysis] = React.useState<Set<string>>(new Set());
+  const [promoteCapture, setPromoteCapture] = React.useState<QuickCaptureItem | null>(null);
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
   const editRef = React.useRef<HTMLTextAreaElement>(null);
   const { addItem, setIsDragging, setOnCardsUpdated } = useAIAnalysis();
@@ -280,11 +288,23 @@ export function QuickCapture() {
                             </p>
                           </div>
                         )}
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {formatDistanceToNow(new Date(capture.createdAt), {
-                            addSuffix: true,
-                          })}
-                        </p>
+                        <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                          <span>
+                            {formatDistanceToNow(new Date(capture.createdAt), {
+                              addSuffix: true,
+                            })}
+                          </span>
+                          {capture.project && (
+                            <Link
+                              href={`/projects/${capture.project.slug}`}
+                              className="inline-flex items-center gap-1 text-xs font-medium text-blue-500 hover:text-blue-600 hover:underline"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                              {capture.project.name}
+                            </Link>
+                          )}
+                        </div>
                       </>
                     )}
                   </div>
@@ -314,6 +334,17 @@ export function QuickCapture() {
                           )}
                         </Button>
                       )}
+                      {!capture.projectId && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
+                          onClick={() => setPromoteCapture(capture)}
+                          title="Promote to Project"
+                        >
+                          <Rocket className="h-3 w-3" />
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="icon"
@@ -338,6 +369,18 @@ export function QuickCapture() {
           )}
         </div>
       </CardContent>
+
+      {/* Promote to Project Dialog */}
+      {promoteCapture && (
+        <PromoteToProject
+          capture={promoteCapture}
+          open={!!promoteCapture}
+          onOpenChange={(open) => {
+            if (!open) setPromoteCapture(null);
+          }}
+          onCaptureUpdated={fetchCaptures}
+        />
+      )}
     </Card>
   );
 }

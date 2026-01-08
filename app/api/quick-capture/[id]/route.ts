@@ -8,18 +8,44 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { content } = body;
+    const { content, projectId } = body;
 
-    if (!content || content.trim() === "") {
+    // Build update data - only include fields that are provided
+    const updateData: { content?: string; projectId?: string | null } = {};
+
+    if (content !== undefined) {
+      if (content.trim() === "") {
+        return NextResponse.json(
+          { error: "Content cannot be empty" },
+          { status: 400 }
+        );
+      }
+      updateData.content = content.trim();
+    }
+
+    if (projectId !== undefined) {
+      updateData.projectId = projectId;
+    }
+
+    if (Object.keys(updateData).length === 0) {
       return NextResponse.json(
-        { error: "Content is required" },
+        { error: "No fields to update" },
         { status: 400 }
       );
     }
 
     const capture = await db.quickCapture.update({
       where: { id },
-      data: { content: content.trim() },
+      data: updateData,
+      include: {
+        project: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
     });
 
     return NextResponse.json(capture);
