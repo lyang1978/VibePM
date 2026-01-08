@@ -142,7 +142,8 @@ export function PromoteToProject({
   const generateSuggestions = async (
     content: string,
     analysisText: string,
-    userAnswers?: { question: string; answer: string }[]
+    userAnswers?: { question: string; answer: string }[],
+    skipQuestions = false
   ) => {
     try {
       setStep("generating");
@@ -169,8 +170,11 @@ export function PromoteToProject({
       setProblemStatement(data.suggestedProblem);
       setMvpDefinition(data.suggestedMvp);
 
-      // Go to questions if there are any, otherwise review
-      if (data.clarifyingQuestions && data.clarifyingQuestions.length > 0) {
+      // If refinement (skipQuestions=true), go directly to review
+      // Otherwise, show questions if there are any
+      if (skipQuestions) {
+        setStep("review");
+      } else if (data.clarifyingQuestions && data.clarifyingQuestions.length > 0) {
         setStep("questions");
       } else {
         setStep("review");
@@ -191,7 +195,8 @@ export function PromoteToProject({
         answer: answers[q.id],
       }));
 
-    await generateSuggestions(rawIdea, analysis, userAnswers);
+    // Pass skipQuestions=true so we go straight to review after refinement
+    await generateSuggestions(rawIdea, analysis, userAnswers, true);
   };
 
   const handleCreateProject = async () => {

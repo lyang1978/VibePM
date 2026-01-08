@@ -101,20 +101,31 @@ export async function PATCH(
   }
 }
 
-// DELETE /api/projects/[slug] - Delete a project
+// DELETE /api/projects/[slug] - Soft delete a project
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
     const { slug } = await params;
+    const url = new URL(request.url);
+    const permanent = url.searchParams.get("permanent") === "true";
 
     const project = await db.project.findUnique({ where: { slug } });
     if (!project) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
 
-    await db.project.delete({ where: { slug } });
+    if (permanent) {
+      // Permanent delete
+      await db.project.delete({ where: { slug } });
+    } else {
+      // Soft delete
+      await db.project.update({
+        where: { slug },
+        data: { deletedAt: new Date() },
+      });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

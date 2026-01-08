@@ -23,6 +23,7 @@ model Project {
   status        String        @default("PLANNING") // PLANNING, ACTIVE, PAUSED, COMPLETED, ARCHIVED
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
+  deletedAt     DateTime?     // Soft delete - null means not deleted
 
   // Relations
   phases        Phase[]
@@ -234,4 +235,5 @@ model QuickCapture {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  deletedAt DateTime? // Soft delete - null means not deleted
 }

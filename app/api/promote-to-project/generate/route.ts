@@ -57,7 +57,7 @@ export async function POST(request: Request) {
     const systemPrompt = `You are a product strategist helping convert brainstormed ideas into well-defined project specifications.
 
 Given a user's raw idea and AI analysis, generate:
-1. A concise project name (3-5 words max)
+1. A creative, catchy project name (2-4 words) - make it memorable and cool-sounding, like a startup name or brand. Avoid generic descriptions. Examples: "Vortex", "Nimbus", "SkyForge", "Ember", "Pulse", "Axiom". Can combine words creatively or use evocative single words.
 2. A clear problem statement (what problem does this solve?)
 3. An MVP definition in MoSCoW format (Must Have, Should Have, Could Have, Won't Have)
 4. 2-3 clarifying questions to help refine the project scope

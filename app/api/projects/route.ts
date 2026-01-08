@@ -9,11 +9,17 @@ function generateSlug(name: string): string {
     .replace(/(^-|-$)/g, "");
 }
 
-// GET /api/projects - List all projects
-export async function GET() {
+// GET /api/projects - List all projects (excludes deleted by default)
+export async function GET(request: NextRequest) {
   try {
+    const url = new URL(request.url);
+    const deleted = url.searchParams.get("deleted") === "true";
+
     const projects = await db.project.findMany({
-      orderBy: { updatedAt: "desc" },
+      where: deleted
+        ? { deletedAt: { not: null } }
+        : { deletedAt: null },
+      orderBy: deleted ? { deletedAt: "desc" } : { updatedAt: "desc" },
       include: {
         _count: {
           select: {

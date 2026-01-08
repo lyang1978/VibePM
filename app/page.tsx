@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { QuickCapture } from "@/components/shared/quick-capture";
+import { RecentlyDeleted } from "@/components/shared/recently-deleted";
 
 export default function DashboardPage() {
   return (
@@ -54,6 +55,9 @@ export default function DashboardPage() {
 
       {/* Quick Capture Section */}
       <QuickCapture />
+
+      {/* Recently Deleted Section */}
+      <RecentlyDeleted />
 
       {/* Recent Activity Section */}
       <div className="space-y-4">

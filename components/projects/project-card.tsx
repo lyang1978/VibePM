@@ -1,8 +1,23 @@
 "use client";
 
-import Link from "next/link";
+import * as React from "react";
+import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
-import { MoreHorizontal, FolderKanban, Zap, CheckCircle2 } from "lucide-react";
+import {
+  MoreHorizontal,
+  FolderKanban,
+  Zap,
+  CheckCircle2,
+  Pencil,
+  Copy,
+  Archive,
+  ArchiveRestore,
+  Trash2,
+  Play,
+  Pause,
+  CheckCircle,
+  AlertCircle,
+} from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,7 +27,21 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Project {
   id: string;
@@ -47,9 +76,108 @@ const statusLabels: Record<string, string> = {
 };
 
 export function ProjectCard({ project, taskCount, promptCount }: ProjectCardProps) {
+  const router = useRouter();
+  const [isDeleting, setIsDeleting] = React.useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
+  const [isUpdating, setIsUpdating] = React.useState(false);
+
+  const handleStatusChange = async (newStatus: string) => {
+    if (isUpdating) return;
+    setIsUpdating(true);
+
+    try {
+      const response = await fetch(`/api/projects/${project.slug}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (response.ok) {
+        router.refresh();
+      }
+    } catch (error) {
+      console.error("Failed to update status:", error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDuplicate = async () => {
+    if (isUpdating) return;
+    setIsUpdating(true);
+
+    try {
+      // Fetch full project details
+      const response = await fetch(`/api/projects/${project.slug}`);
+      if (!response.ok) throw new Error("Failed to fetch project");
+
+      const projectData = await response.json();
+
+      // Create a new project with copied data
+      const createResponse = await fetch("/api/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: `${projectData.name} (Copy)`,
+          problem: projectData.problem,
+          mvpDefinition: projectData.mvpDefinition,
+        }),
+      });
+
+      if (createResponse.ok) {
+        router.refresh();
+      }
+    } catch (error) {
+      console.error("Failed to duplicate project:", error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+
+    try {
+      const response = await fetch(`/api/projects/${project.slug}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        router.refresh();
+      }
+    } catch (error) {
+      console.error("Failed to delete project:", error);
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
+
+  const handleArchive = () => {
+    handleStatusChange("ARCHIVED");
+  };
+
+  const handleUnarchive = () => {
+    handleStatusChange("PLANNING");
+  };
+
+  const isArchived = project.status === "ARCHIVED";
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Only navigate if the click target is not inside the dropdown
+    const target = e.target as HTMLElement;
+    if (!target.closest('[data-slot="dropdown-menu-trigger"]') &&
+        !target.closest('[data-slot="dropdown-menu-content"]')) {
+      router.push(`/projects/${project.slug}`);
+    }
+  };
+
   return (
-    <Link href={`/projects/${project.slug}`}>
-      <Card className="card-brutalist cursor-pointer transition-all hover:translate-x-1 hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.8)]">
+    <>
+      <Card
+        className="card-brutalist cursor-pointer transition-all hover:translate-x-1 hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.8)]"
+        onClick={handleCardClick}
+      >
         <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg gradient-pink">
@@ -62,18 +190,92 @@ export function ProjectCard({ project, taskCount, promptCount }: ProjectCardProp
               </p>
             </div>
           </div>
+          {/* Dropdown menu */}
           <DropdownMenu>
-            <DropdownMenuTrigger asChild onClick={(e) => e.preventDefault()}>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 hover:bg-muted"
+              >
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>Edit</DropdownMenuItem>
-              <DropdownMenuItem>Duplicate</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
-            </DropdownMenuContent>
+              <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                <DropdownMenuItem onClick={() => router.push(`/projects/${project.slug}`)}>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit Project
+                </DropdownMenuItem>
+
+                <DropdownMenuItem onClick={handleDuplicate} disabled={isUpdating}>
+                  <Copy className="mr-2 h-4 w-4" />
+                  Duplicate
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator />
+
+                {/* Status submenu */}
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <AlertCircle className="mr-2 h-4 w-4" />
+                    Change Status
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuPortal>
+                    <DropdownMenuSubContent>
+                      <DropdownMenuItem
+                        onClick={() => handleStatusChange("PLANNING")}
+                        disabled={project.status === "PLANNING" || isUpdating}
+                      >
+                        <AlertCircle className="mr-2 h-4 w-4 text-yellow-500" />
+                        Planning
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleStatusChange("ACTIVE")}
+                        disabled={project.status === "ACTIVE" || isUpdating}
+                      >
+                        <Play className="mr-2 h-4 w-4 text-green-500" />
+                        Active
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleStatusChange("PAUSED")}
+                        disabled={project.status === "PAUSED" || isUpdating}
+                      >
+                        <Pause className="mr-2 h-4 w-4 text-orange-500" />
+                        Paused
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleStatusChange("COMPLETED")}
+                        disabled={project.status === "COMPLETED" || isUpdating}
+                      >
+                        <CheckCircle className="mr-2 h-4 w-4 text-blue-500" />
+                        Completed
+                      </DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuPortal>
+                </DropdownMenuSub>
+
+                <DropdownMenuSeparator />
+
+                {isArchived ? (
+                  <DropdownMenuItem onClick={handleUnarchive} disabled={isUpdating}>
+                    <ArchiveRestore className="mr-2 h-4 w-4" />
+                    Unarchive
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem onClick={handleArchive} disabled={isUpdating}>
+                    <Archive className="mr-2 h-4 w-4" />
+                    Archive
+                  </DropdownMenuItem>
+                )}
+
+                <DropdownMenuItem
+                  onClick={() => setShowDeleteDialog(true)}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
           </DropdownMenu>
         </CardHeader>
         <CardContent>
@@ -99,6 +301,30 @@ export function ProjectCard({ project, taskCount, promptCount }: ProjectCardProp
           </div>
         </CardContent>
       </Card>
-    </Link>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Project</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete &quot;{project.name}&quot;? This will permanently
+              delete the project and all its tasks, prompts, and decisions. This action
+              cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

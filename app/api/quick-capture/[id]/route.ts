@@ -64,10 +64,21 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+    const url = new URL(request.url);
+    const permanent = url.searchParams.get("permanent") === "true";
 
-    await db.quickCapture.delete({
-      where: { id },
-    });
+    if (permanent) {
+      // Permanent delete
+      await db.quickCapture.delete({
+        where: { id },
+      });
+    } else {
+      // Soft delete
+      await db.quickCapture.update({
+        where: { id },
+        data: { deletedAt: new Date() },
+      });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

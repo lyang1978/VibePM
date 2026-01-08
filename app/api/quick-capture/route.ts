@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const url = new URL(request.url);
+    const deleted = url.searchParams.get("deleted") === "true";
+
     const captures = await db.quickCapture.findMany({
-      orderBy: { createdAt: "desc" },
+      where: deleted
+        ? { deletedAt: { not: null } }
+        : { deletedAt: null },
+      orderBy: deleted ? { deletedAt: "desc" } : { createdAt: "desc" },
       include: {
         project: {
           select: {
