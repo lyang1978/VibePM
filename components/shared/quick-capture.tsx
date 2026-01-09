@@ -218,7 +218,7 @@ export function QuickCapture() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Brain dump an idea... (Enter to save)"
-              className="w-full resize-none rounded-lg border-2 border-foreground bg-background p-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-foreground/20"
+              className="w-full resize-none rounded-lg border border-border bg-background p-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
               rows={2}
             />
             {isSubmitting && (
@@ -266,7 +266,7 @@ export function QuickCapture() {
                     // Add to AI analysis on successful drop
                     addItem(capture);
                   }}
-                  className={`group flex items-start gap-2 rounded-lg border-2 border-foreground/20 bg-muted/30 p-3 transition-colors hover:border-foreground/40 ${
+                  className={`group flex items-start gap-2 rounded-lg border border-border bg-muted/30 p-3 transition-all hover:bg-muted/50 hover:shadow-sm ${
                     editingId === capture.id ? "cursor-text" : "cursor-grab active:cursor-grabbing"
                   }`}
                 >
@@ -281,7 +281,7 @@ export function QuickCapture() {
                         onChange={(e) => setEditContent(e.target.value)}
                         onKeyDown={(e) => handleEditKeyDown(e, capture.id)}
                         onBlur={() => handleUpdate(capture.id)}
-                        className="w-full resize-none rounded border-2 border-foreground bg-background p-2 text-sm focus:outline-none focus:ring-2 focus:ring-foreground/20"
+                        className="w-full resize-none rounded-lg border border-border bg-background p-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring/30"
                         rows={Math.max(2, editContent.split("\n").length)}
                       />
                     ) : (

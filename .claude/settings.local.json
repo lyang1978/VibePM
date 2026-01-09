@@ -19,7 +19,15 @@
       "Bash(gh repo create:*)",
       "Bash(git push:*)",
       "Bash(timeout 10 npm run dev)",
-      "Bash(timeout 8 npm run dev:*)"
+      "Bash(timeout 8 npm run dev:*)",
+      "Bash(sqlite3:*)",
+      "Bash(curl:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(npm run package:*)",
+      "Bash(powershell -Command \"Remove-Item -Recurse -Force .next\")",
+      "Bash(npx next build)",
+      "Bash(powershell -Command \"Remove-Item -Recurse -Force node_modules\")",
+      "Bash(git commit:*)"
     ]
   }
 }

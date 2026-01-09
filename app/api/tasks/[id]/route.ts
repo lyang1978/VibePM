@@ -46,6 +46,8 @@ export async function PATCH(
       return NextResponse.json({ error: "Task not found" }, { status: 404 });
     }
 
+    const oldStatus = task.status;
+
     const updatedTask = await db.task.update({
       where: { id },
       data: {
@@ -56,6 +58,26 @@ export async function PATCH(
         ...(order !== undefined && { order }),
       },
     });
+
+    // Log activity for status changes
+    if (status !== undefined && status !== oldStatus) {
+      const statusLabels: Record<string, string> = {
+        TODO: "To Do",
+        IN_PROGRESS: "In Progress",
+        BLOCKED: "Blocked",
+        COMPLETED: "Done",
+        CANCELLED: "Cancelled",
+      };
+      await db.activity.create({
+        data: {
+          projectId: task.projectId,
+          type: "task_status_changed",
+          title: `Moved "${task.title}" to ${statusLabels[status] || status}`,
+          taskId: task.id,
+          metadata: JSON.stringify({ oldStatus, newStatus: status }),
+        },
+      });
+    }
 
     return NextResponse.json(updatedTask);
   } catch (error) {

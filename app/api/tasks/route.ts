@@ -41,6 +41,16 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Log activity
+    await db.activity.create({
+      data: {
+        projectId,
+        type: "task_created",
+        title: `Created task "${task.title}"`,
+        taskId: task.id,
+      },
+    });
+
     return NextResponse.json(task, { status: 201 });
   } catch (error) {
     console.error("Failed to create task:", error);

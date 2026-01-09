@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Pencil, Sparkles, Check, X, Loader2 } from "lucide-react";
+import { Pencil, Sparkles, Check, X, Loader2, CheckCircle2, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +29,10 @@ export function ProjectNameEditor({
   const [name, setName] = React.useState(projectName);
   const [isLoading, setIsLoading] = React.useState(false);
   const [isGenerating, setIsGenerating] = React.useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
+
+  const isCompleted = status === "COMPLETED";
 
   React.useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -99,6 +102,26 @@ export function ProjectNameEditor({
       console.error("Failed to generate AI name:", error);
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const toggleProjectStatus = async () => {
+    setIsUpdatingStatus(true);
+    try {
+      const newStatus = isCompleted ? "ACTIVE" : "COMPLETED";
+      const response = await fetch(`/api/projects/${projectSlug}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (response.ok) {
+        router.refresh();
+      }
+    } catch (error) {
+      console.error("Failed to update project status:", error);
+    } finally {
+      setIsUpdatingStatus(false);
     }
   };
 
@@ -173,6 +196,28 @@ export function ProjectNameEditor({
           )}
         </Button>
       </div>
+      <Button
+        variant={isCompleted ? "outline" : "default"}
+        size="sm"
+        onClick={toggleProjectStatus}
+        disabled={isUpdatingStatus}
+        className={isCompleted ? "gap-1.5" : "gap-1.5 bg-green-600 hover:bg-green-700"}
+        title={isCompleted ? "Reopen project" : "Mark as finished"}
+      >
+        {isUpdatingStatus ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : isCompleted ? (
+          <>
+            <RotateCcw className="h-4 w-4" />
+            Reopen
+          </>
+        ) : (
+          <>
+            <CheckCircle2 className="h-4 w-4" />
+            Mark Finished
+          </>
+        )}
+      </Button>
     </div>
   );
 }

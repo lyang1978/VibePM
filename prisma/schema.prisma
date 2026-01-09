@@ -34,6 +34,7 @@ model Project {
   contextDoc    ContextDocument?
   moodBoard     MoodBoard?
   quickCaptures QuickCapture[]
+  activities    Activity[]
 }
 
 model Phase {
@@ -221,6 +222,30 @@ model Session {
 }
 
 // =============================================================================
+// ACTIVITY FEED (for tracking project events)
+// =============================================================================
+
+model Activity {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  type        String   // task_created, task_status_changed, prompt_generated, prompt_outcome_set
+  title       String   // Human-readable title
+  description String?  // Optional details
+
+  taskId      String?
+  promptId    String?
+
+  metadata    String?  // JSON for additional context (old/new values)
+
+  createdAt   DateTime @default(now())
+
+  @@index([projectId])
+  @@index([createdAt])
+}
+
+// =============================================================================
 // QUICK CAPTURE (for ideas captured mid-flow)
 // =============================================================================
 
@@ -236,4 +261,16 @@ model QuickCapture {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   deletedAt DateTime? // Soft delete - null means not deleted
+}
+
+// =============================================================================
+// APP SETTINGS (key-value store for app configuration)
+// =============================================================================
+
+model AppSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String   // JSON-encoded value
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

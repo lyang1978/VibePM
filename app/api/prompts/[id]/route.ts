@@ -40,10 +40,15 @@ export async function PATCH(
     const body = await request.json();
     const { title, content, outcome, notes } = body;
 
-    const prompt = await db.prompt.findUnique({ where: { id } });
+    const prompt = await db.prompt.findUnique({
+      where: { id },
+      include: { task: { select: { title: true } } },
+    });
     if (!prompt) {
       return NextResponse.json({ error: "Prompt not found" }, { status: 404 });
     }
+
+    const oldOutcome = prompt.outcome;
 
     const updatedPrompt = await db.prompt.update({
       where: { id },
@@ -54,6 +59,26 @@ export async function PATCH(
         ...(notes !== undefined && { notes: notes?.trim() || null }),
       },
     });
+
+    // Log activity for outcome changes
+    if (outcome !== undefined && outcome !== oldOutcome && prompt.projectId) {
+      const outcomeLabels: Record<string, string> = {
+        WORKED: "worked",
+        PARTIAL: "partially worked",
+        FAILED: "failed",
+      };
+      await db.activity.create({
+        data: {
+          projectId: prompt.projectId,
+          type: "prompt_outcome_set",
+          title: `Marked prompt ${outcomeLabels[outcome] || outcome}`,
+          description: prompt.task?.title ? `For task: ${prompt.task.title}` : undefined,
+          taskId: prompt.taskId || undefined,
+          promptId: prompt.id,
+          metadata: JSON.stringify({ oldOutcome, newOutcome: outcome }),
+        },
+      });
+    }
 
     return NextResponse.json(updatedPrompt);
   } catch (error) {

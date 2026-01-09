@@ -156,7 +156,7 @@ export function RecentlyDeleted() {
 
   return (
     <>
-      <Card className="card-brutalist border-dashed">
+      <Card className="card-brutalist border-dashed border-muted-foreground/30">
         <CardHeader
           className="cursor-pointer select-none"
           onClick={() => setIsExpanded(!isExpanded)}
@@ -183,7 +183,7 @@ export function RecentlyDeleted() {
               {deletedProjects.map((project) => (
                 <div
                   key={project.id}
-                  className="flex items-center justify-between rounded-lg border border-dashed p-3 bg-muted/30"
+                  className="flex items-center justify-between rounded-lg border border-dashed border-muted-foreground/30 p-3 bg-muted/20"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-muted">
@@ -242,7 +242,7 @@ export function RecentlyDeleted() {
                 return (
                   <div
                     key={capture.id}
-                    className="flex items-center justify-between rounded-lg border border-dashed p-3 bg-muted/30"
+                    className="flex items-center justify-between rounded-lg border border-dashed border-muted-foreground/30 p-3 bg-muted/20"
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-muted">

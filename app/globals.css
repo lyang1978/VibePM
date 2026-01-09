@@ -54,25 +54,25 @@
 }
 
 :root {
-  --radius: 0.5rem;
+  --radius: 0.75rem;
   --background: oklch(0.97 0 0);
-  --foreground: oklch(0.1 0 0);
+  --foreground: oklch(0.15 0 0);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.1 0 0);
+  --card-foreground: oklch(0.15 0 0);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.1 0 0);
-  --primary: oklch(0.1 0 0);
+  --popover-foreground: oklch(0.15 0 0);
+  --primary: oklch(0.15 0 0);
   --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.95 0 0);
-  --secondary-foreground: oklch(0.1 0 0);
-  --muted: oklch(0.95 0 0);
-  --muted-foreground: oklch(0.45 0 0);
-  --accent: oklch(0.95 0 0);
-  --accent-foreground: oklch(0.1 0 0);
-  --destructive: oklch(0.55 0.25 27);
-  --border: oklch(0.1 0 0);
-  --input: oklch(0.9 0 0);
-  --ring: oklch(0.1 0 0);
+  --secondary: oklch(0.96 0 0);
+  --secondary-foreground: oklch(0.15 0 0);
+  --muted: oklch(0.96 0.005 250);
+  --muted-foreground: oklch(0.5 0 0);
+  --accent: oklch(0.96 0.005 250);
+  --accent-foreground: oklch(0.15 0 0);
+  --destructive: oklch(0.6 0.2 25);
+  --border: oklch(0.9 0 0);
+  --input: oklch(0.96 0 0);
+  --ring: oklch(0.7 0.15 250);
 
   /* VibePM Accent Colors - matching UI reference */
   --vibe-pink: oklch(0.7 0.2 350);
@@ -90,51 +90,51 @@
 
   /* Sidebar */
   --sidebar: oklch(1 0 0);
-  --sidebar-foreground: oklch(0.1 0 0);
-  --sidebar-primary: oklch(0.1 0 0);
+  --sidebar-foreground: oklch(0.4 0 0);
+  --sidebar-primary: oklch(0.15 0 0);
   --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.95 0 0);
-  --sidebar-accent-foreground: oklch(0.1 0 0);
-  --sidebar-border: oklch(0.1 0 0);
-  --sidebar-ring: oklch(0.1 0 0);
+  --sidebar-accent: oklch(0.96 0.005 250);
+  --sidebar-accent-foreground: oklch(0.15 0 0);
+  --sidebar-border: oklch(0.92 0 0);
+  --sidebar-ring: oklch(0.7 0.15 250);
 }
 
 .dark {
-  --background: oklch(0.1 0 0);
-  --foreground: oklch(0.95 0 0);
-  --card: oklch(0.15 0 0);
-  --card-foreground: oklch(0.95 0 0);
-  --popover: oklch(0.15 0 0);
-  --popover-foreground: oklch(0.95 0 0);
-  --primary: oklch(0.95 0 0);
-  --primary-foreground: oklch(0.1 0 0);
+  --background: oklch(0.12 0 0);
+  --foreground: oklch(0.93 0 0);
+  --card: oklch(0.16 0 0);
+  --card-foreground: oklch(0.93 0 0);
+  --popover: oklch(0.16 0 0);
+  --popover-foreground: oklch(0.93 0 0);
+  --primary: oklch(0.93 0 0);
+  --primary-foreground: oklch(0.12 0 0);
   --secondary: oklch(0.2 0 0);
-  --secondary-foreground: oklch(0.95 0 0);
+  --secondary-foreground: oklch(0.93 0 0);
   --muted: oklch(0.2 0 0);
-  --muted-foreground: oklch(0.6 0 0);
+  --muted-foreground: oklch(0.55 0 0);
   --accent: oklch(0.2 0 0);
-  --accent-foreground: oklch(0.95 0 0);
-  --destructive: oklch(0.65 0.2 25);
-  --border: oklch(0.95 0 0);
-  --input: oklch(0.25 0 0);
-  --ring: oklch(0.95 0 0);
+  --accent-foreground: oklch(0.93 0 0);
+  --destructive: oklch(0.6 0.2 25);
+  --border: oklch(0.25 0 0);
+  --input: oklch(0.2 0 0);
+  --ring: oklch(0.7 0.15 250);
 
   /* VibePM Accent Colors - dark mode */
-  --vibe-pink: oklch(0.75 0.18 350);
-  --vibe-pink-dark: oklch(0.6 0.22 340);
-  --vibe-blue: oklch(0.7 0.13 250);
-  --vibe-blue-dark: oklch(0.55 0.18 250);
-  --vibe-purple: oklch(0.65 0.18 300);
+  --vibe-pink: oklch(0.7 0.18 350);
+  --vibe-pink-dark: oklch(0.55 0.22 340);
+  --vibe-blue: oklch(0.65 0.13 250);
+  --vibe-blue-dark: oklch(0.5 0.18 250);
+  --vibe-purple: oklch(0.6 0.18 300);
 
   /* Sidebar */
-  --sidebar: oklch(0.12 0 0);
-  --sidebar-foreground: oklch(0.95 0 0);
-  --sidebar-primary: oklch(0.95 0 0);
-  --sidebar-primary-foreground: oklch(0.1 0 0);
+  --sidebar: oklch(0.14 0 0);
+  --sidebar-foreground: oklch(0.55 0 0);
+  --sidebar-primary: oklch(0.93 0 0);
+  --sidebar-primary-foreground: oklch(0.12 0 0);
   --sidebar-accent: oklch(0.2 0 0);
-  --sidebar-accent-foreground: oklch(0.95 0 0);
-  --sidebar-border: oklch(0.3 0 0);
-  --sidebar-ring: oklch(0.95 0 0);
+  --sidebar-accent-foreground: oklch(0.93 0 0);
+  --sidebar-border: oklch(0.22 0 0);
+  --sidebar-ring: oklch(0.7 0.15 250);
 }
 
 @layer base {
@@ -148,19 +148,24 @@
 
 /* VibePM Custom Utilities */
 @layer utilities {
-  /* Brutalist card style from UI reference */
+  /* Clean card style with subtle shadow */
   .card-brutalist {
-    @apply bg-card border-2 border-foreground rounded-lg;
+    @apply bg-card border border-border rounded-xl shadow-sm;
   }
 
   /* Dashed drop zone style */
   .drop-zone {
-    @apply border-2 border-dashed border-muted-foreground/50 rounded-lg;
+    @apply border-2 border-dashed border-muted-foreground/30 rounded-xl;
   }
 
-  /* Section headers - uppercase, bold, tracking */
+  /* Section headers - clean, medium weight */
   .section-header {
-    @apply text-sm font-bold uppercase tracking-wide text-foreground;
+    @apply text-base font-semibold text-foreground;
+  }
+
+  /* Sidebar section headers */
+  .sidebar-section-header {
+    @apply text-xs font-medium uppercase tracking-wider text-muted-foreground px-3 py-2;
   }
 
   /* Gradient backgrounds for status cards */
@@ -174,6 +179,16 @@
 
   .gradient-purple {
     background: linear-gradient(135deg, var(--vibe-purple) 0%, var(--vibe-pink-dark) 100%);
+  }
+
+  /* Icon container style */
+  .icon-container {
+    @apply flex items-center justify-center rounded-lg p-2;
+  }
+
+  /* List item hover */
+  .list-item-hover {
+    @apply transition-colors hover:bg-muted/50 rounded-lg cursor-pointer;
   }
 }
 

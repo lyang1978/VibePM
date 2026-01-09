@@ -175,17 +175,17 @@ export function ProjectCard({ project, taskCount, promptCount }: ProjectCardProp
   return (
     <>
       <Card
-        className="card-brutalist cursor-pointer transition-all hover:translate-x-1 hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.8)]"
+        className="card-brutalist cursor-pointer transition-all hover:shadow-md"
         onClick={handleCardClick}
       >
-        <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+        <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg gradient-pink">
-              <FolderKanban className="h-5 w-5 text-white" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted">
+              <FolderKanban className="h-5 w-5 text-muted-foreground" />
             </div>
             <div>
-              <h3 className="font-semibold leading-none">{project.name}</h3>
-              <p className="mt-1 text-xs text-muted-foreground">
+              <h3 className="font-medium leading-none">{project.name}</h3>
+              <p className="mt-1.5 text-xs text-muted-foreground">
                 Updated {formatDistanceToNow(new Date(project.updatedAt), { addSuffix: true })}
               </p>
             </div>
@@ -269,7 +269,11 @@ export function ProjectCard({ project, taskCount, promptCount }: ProjectCardProp
                 )}
 
                 <DropdownMenuItem
-                  onClick={() => setShowDeleteDialog(true)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setShowDeleteDialog(true);
+                  }}
                   className="text-destructive focus:text-destructive"
                 >
                   <Trash2 className="mr-2 h-4 w-4" />

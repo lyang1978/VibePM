@@ -1,6 +1,4 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {
-  // Configuration for VibePM
-};
+const nextConfig = {};
 
 export default nextConfig;

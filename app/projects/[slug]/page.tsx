@@ -55,6 +55,10 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
           },
         },
       },
+      activities: {
+        orderBy: { createdAt: "desc" },
+        take: 10,
+      },
       contextDoc: true,
       _count: {
         select: {
@@ -122,6 +126,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
           projectSlug={slug}
           tasks={project.tasks}
           prompts={project.prompts}
+          activities={project.activities}
         />
       </div>
     </div>

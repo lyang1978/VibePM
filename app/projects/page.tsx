@@ -8,6 +8,7 @@ import { ProjectCard } from "@/components/projects/project-card";
 
 export default async function ProjectsPage() {
   const projects = await db.project.findMany({
+    where: { deletedAt: null },
     orderBy: { updatedAt: "desc" },
     include: {
       _count: {
@@ -43,7 +44,7 @@ export default async function ProjectsPage() {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search projects..."
-            className="pl-9 border-2 border-foreground"
+            className="pl-9"
           />
         </div>
       </div>

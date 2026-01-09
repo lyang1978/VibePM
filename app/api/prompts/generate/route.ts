@@ -115,6 +115,17 @@ Generate a prompt that will help accomplish this task effectively. The prompt sh
       },
     });
 
+    // Log activity
+    await db.activity.create({
+      data: {
+        projectId,
+        type: "prompt_generated",
+        title: `Generated prompt for "${task.title}"`,
+        taskId,
+        promptId: prompt.id,
+      },
+    });
+
     return NextResponse.json(prompt, { status: 201 });
   } catch (error) {
     console.error("Error generating prompt:", error);

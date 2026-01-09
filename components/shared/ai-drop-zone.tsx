@@ -136,7 +136,7 @@ export function AIDropZone() {
   return (
     <>
       <div className="space-y-2">
-        <h3 className="section-header px-3 flex items-center gap-2">
+        <h3 className="sidebar-section-header flex items-center gap-2">
           <Sparkles className="h-3 w-3" />
           AI Analysis
         </h3>
@@ -148,10 +148,10 @@ export function AIDropZone() {
           onDrop={handleDrop}
           className={cn(
             "mx-2 rounded-lg border-2 border-dashed p-3 transition-all",
-            isDragging && "border-foreground/60 bg-muted/50",
-            isOver && "border-foreground bg-muted scale-[1.02]",
-            !isDragging && !isOver && "border-foreground/30",
-            droppedItems.length > 0 && "border-solid border-foreground/40"
+            isDragging && "border-ring bg-muted/50",
+            isOver && "border-ring bg-muted scale-[1.02] shadow-sm",
+            !isDragging && !isOver && "border-muted-foreground/30",
+            droppedItems.length > 0 && "border-solid border-border"
           )}
         >
           {droppedItems.length === 0 ? (
@@ -257,7 +257,7 @@ export function AIDropZone() {
                     {analysisResult.originalItems.map((item, index) => (
                       <div
                         key={item.id}
-                        className="rounded-lg border-2 border-foreground/20 bg-muted/30 p-3"
+                        className="rounded-lg border border-border bg-muted/30 p-3"
                       >
                         <span className="text-xs text-muted-foreground mr-2">
                           {index + 1}.
@@ -273,7 +273,7 @@ export function AIDropZone() {
                   <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
                     AI Recommendations
                   </h3>
-                  <div className="rounded-lg border-2 border-foreground/20 bg-muted/10 p-4 prose prose-sm dark:prose-invert max-w-none">
+                  <div className="rounded-lg border border-border bg-muted/10 p-4 prose prose-sm dark:prose-invert max-w-none">
                     <div className="whitespace-pre-wrap text-sm leading-relaxed">
                       {analysisResult.analysis}
                     </div>

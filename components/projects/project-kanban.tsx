@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { AddTaskDialog } from "@/components/tasks/add-task-dialog";
 import { EditTaskDialog } from "@/components/tasks/edit-task-dialog";
 import { EditPromptDialog } from "@/components/prompts/edit-prompt-dialog";
+import { ActivityFeed } from "@/components/projects/activity-feed";
+import { InsightsPanel } from "@/components/projects/insights-panel";
 import { cn } from "@/lib/utils";
 
 interface Task {
@@ -33,11 +35,23 @@ interface Prompt {
   } | null;
 }
 
+interface Activity {
+  id: string;
+  type: string;
+  title: string;
+  description: string | null;
+  taskId: string | null;
+  promptId: string | null;
+  metadata: string | null;
+  createdAt: Date | string;
+}
+
 interface ProjectKanbanProps {
   projectId: string;
   projectSlug: string;
   tasks: Task[];
   prompts: Prompt[];
+  activities: Activity[];
 }
 
 const complexityColors: Record<string, string> = {
@@ -97,9 +111,9 @@ function KanbanColumn({
       </div>
       <div
         className={cn(
-          "flex-1 space-y-6 min-h-[400px] p-3 rounded-lg bg-muted/50 border-2 border-dashed transition-all",
+          "flex-1 space-y-6 min-h-[400px] p-3 rounded-xl bg-muted/30 border border-dashed transition-all",
           isDropTarget
-            ? "border-purple-500 bg-purple-500/10"
+            ? "border-ring bg-ring/10 shadow-sm"
             : "border-muted-foreground/20"
         )}
         onDragOver={onDragOver}
@@ -123,7 +137,7 @@ function TaskCard({ task, onClick, onDragStart, onDragEnd, isDragging }: TaskCar
   return (
     <Card
       className={cn(
-        "card-brutalist cursor-pointer bg-background hover:translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:hover:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.8)] transition-all",
+        "card-brutalist cursor-pointer bg-background hover:shadow-md transition-all",
         isDragging && "opacity-50"
       )}
       onClick={onClick}
@@ -163,7 +177,7 @@ function PromptCard({ prompt, onClick, onDragStart, onDragEnd, isDragging }: Pro
   return (
     <Card
       className={cn(
-        "card-brutalist cursor-pointer bg-background hover:translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:hover:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.8)] transition-all",
+        "card-brutalist cursor-pointer bg-background hover:shadow-md transition-all",
         isDragging && "opacity-50"
       )}
       onClick={onClick}
@@ -205,6 +219,7 @@ export function ProjectKanban({
   projectSlug,
   tasks,
   prompts,
+  activities,
 }: ProjectKanbanProps) {
   const router = useRouter();
   const [addTaskOpen, setAddTaskOpen] = React.useState(false);
@@ -212,14 +227,25 @@ export function ProjectKanban({
   const [editingPrompt, setEditingPrompt] = React.useState<Prompt | null>(null);
   const [draggingTask, setDraggingTask] = React.useState<Task | null>(null);
   const [draggingPrompt, setDraggingPrompt] = React.useState<Prompt | null>(null);
+  const [isTodoDropTarget, setIsTodoDropTarget] = React.useState(false);
   const [isPromptDropTarget, setIsPromptDropTarget] = React.useState(false);
   const [isInProgressDropTarget, setIsInProgressDropTarget] = React.useState(false);
+  const [isDoneDropTarget, setIsDoneDropTarget] = React.useState(false);
   const [isGeneratingPrompt, setIsGeneratingPrompt] = React.useState(false);
 
-  // Get task IDs that have prompts (they should appear in Prompts column, not TODO)
-  const taskIdsWithPrompts = new Set(prompts.map((p) => p.taskId).filter(Boolean));
+  // Map of taskId to prompt for quick lookup
+  const taskToPrompt = new Map(prompts.map((p) => [p.taskId, p]));
 
-  const todoTasks = tasks.filter((t) => t.status === "TODO" && !taskIdsWithPrompts.has(t.id));
+  // Get task IDs that have prompts AND are in TODO status (shown in Prompts column, not TODO)
+  const promptsForTodoTasks = prompts.filter((p) => {
+    if (!p.taskId) return false;
+    const task = tasks.find((t) => t.id === p.taskId);
+    return task?.status === "TODO";
+  });
+  const taskIdsInPromptsColumn = new Set(promptsForTodoTasks.map((p) => p.taskId));
+
+  // TODO tasks that don't have prompts (tasks with prompts show in Prompts column)
+  const todoTasks = tasks.filter((t) => t.status === "TODO" && !taskIdsInPromptsColumn.has(t.id));
   const inProgressTasks = tasks.filter((t) => t.status === "IN_PROGRESS");
   const completedTasks = tasks.filter((t) => t.status === "COMPLETED");
 
@@ -232,8 +258,61 @@ export function ProjectKanban({
   const handleDragEnd = () => {
     setDraggingTask(null);
     setDraggingPrompt(null);
+    setIsTodoDropTarget(false);
     setIsPromptDropTarget(false);
     setIsInProgressDropTarget(false);
+    setIsDoneDropTarget(false);
+  };
+
+  const handleTodoDragOver = (e: React.DragEvent) => {
+    // Only accept IN_PROGRESS tasks
+    if (!draggingTask || draggingTask.status !== "IN_PROGRESS") return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setIsTodoDropTarget(true);
+  };
+
+  const handleTodoDragLeave = () => {
+    setIsTodoDropTarget(false);
+  };
+
+  const handleTodoDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsTodoDropTarget(false);
+
+    const taskId = e.dataTransfer.getData("taskId");
+    if (!taskId || !draggingTask) return;
+
+    // Only accept IN_PROGRESS tasks
+    if (draggingTask.status !== "IN_PROGRESS") return;
+
+    try {
+      // Update task status to TODO
+      const response = await fetch(`/api/tasks/${taskId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status: "TODO",
+        }),
+      });
+
+      if (response.ok) {
+        // Delete the prompt if it exists (task goes back to clean TODO state)
+        const prompt = taskToPrompt.get(taskId);
+        if (prompt) {
+          await fetch(`/api/prompts/${prompt.id}`, {
+            method: "DELETE",
+          });
+        }
+        router.refresh();
+      } else {
+        console.error("Failed to update task status");
+      }
+    } catch (error) {
+      console.error("Error updating task:", error);
+    } finally {
+      setDraggingTask(null);
+    }
   };
 
   const handlePromptDragStart = (e: React.DragEvent, prompt: Prompt) => {
@@ -245,6 +324,8 @@ export function ProjectKanban({
   };
 
   const handlePromptDragOver = (e: React.DragEvent) => {
+    // Only accept TODO tasks
+    if (!draggingTask || draggingTask.status !== "TODO") return;
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
     setIsPromptDropTarget(true);
@@ -260,6 +341,19 @@ export function ProjectKanban({
 
     const taskId = e.dataTransfer.getData("taskId");
     if (!taskId || !draggingTask) return;
+
+    // Only accept TODO tasks - reject all others
+    if (draggingTask.status !== "TODO") {
+      setDraggingTask(null);
+      return;
+    }
+
+    // Check if this task already has a prompt - if so, just refresh to show it
+    if (taskToPrompt.has(taskId)) {
+      router.refresh();
+      setDraggingTask(null);
+      return;
+    }
 
     setIsGeneratingPrompt(true);
     try {
@@ -287,6 +381,11 @@ export function ProjectKanban({
   };
 
   const handleInProgressDragOver = (e: React.DragEvent) => {
+    // Accept: prompts, TODO tasks (skip prompt), or COMPLETED tasks (move back)
+    const validDrag =
+      draggingPrompt ||
+      (draggingTask && (draggingTask.status === "TODO" || draggingTask.status === "COMPLETED"));
+    if (!validDrag) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
     setIsInProgressDropTarget(true);
@@ -300,27 +399,87 @@ export function ProjectKanban({
     e.preventDefault();
     setIsInProgressDropTarget(false);
 
+    // Check if it's a prompt being dropped (from Prompts column)
     const promptTaskId = e.dataTransfer.getData("promptTaskId");
-    const promptId = e.dataTransfer.getData("promptId");
-    if (!promptTaskId || !draggingPrompt) return;
+
+    // Check if it's a task being dropped (from Done column)
+    const taskId = e.dataTransfer.getData("taskId");
+
+    if (promptTaskId && draggingPrompt) {
+      // Moving from Prompts to In Progress
+      try {
+        const response = await fetch(`/api/tasks/${promptTaskId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            status: "IN_PROGRESS",
+          }),
+        });
+
+        if (response.ok) {
+          router.refresh();
+        } else {
+          console.error("Failed to update task status");
+        }
+      } catch (error) {
+        console.error("Error updating task:", error);
+      } finally {
+        setDraggingPrompt(null);
+      }
+    } else if (taskId && draggingTask && (draggingTask.status === "COMPLETED" || draggingTask.status === "TODO")) {
+      // Moving from Done or TODO directly to In Progress
+      try {
+        const response = await fetch(`/api/tasks/${taskId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            status: "IN_PROGRESS",
+          }),
+        });
+
+        if (response.ok) {
+          router.refresh();
+        } else {
+          console.error("Failed to update task status");
+        }
+      } catch (error) {
+        console.error("Error updating task:", error);
+      } finally {
+        setDraggingTask(null);
+      }
+    }
+  };
+
+  const handleDoneDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setIsDoneDropTarget(true);
+  };
+
+  const handleDoneDragLeave = () => {
+    setIsDoneDropTarget(false);
+  };
+
+  const handleDoneDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDoneDropTarget(false);
+
+    const taskId = e.dataTransfer.getData("taskId");
+    if (!taskId || !draggingTask) return;
+
+    // Only allow moving from In Progress to Done
+    if (draggingTask.status !== "IN_PROGRESS") return;
 
     try {
-      // Update task status to IN_PROGRESS
-      const response = await fetch(`/api/tasks/${promptTaskId}`, {
+      const response = await fetch(`/api/tasks/${taskId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          status: "IN_PROGRESS",
+          status: "COMPLETED",
         }),
       });
 
       if (response.ok) {
-        // Delete the prompt since task is now in progress
-        if (promptId) {
-          await fetch(`/api/prompts/${promptId}`, {
-            method: "DELETE",
-          });
-        }
         router.refresh();
       } else {
         console.error("Failed to update task status");
@@ -328,7 +487,7 @@ export function ProjectKanban({
     } catch (error) {
       console.error("Error updating task:", error);
     } finally {
-      setDraggingPrompt(null);
+      setDraggingTask(null);
     }
   };
 
@@ -359,40 +518,45 @@ export function ProjectKanban({
           title="Todo"
           count={todoTasks.length}
           color="bg-slate-500/20 text-slate-700 dark:text-slate-300"
+          onDragOver={handleTodoDragOver}
+          onDrop={handleTodoDrop}
+          isDropTarget={isTodoDropTarget}
         >
-          {todoTasks.length > 0 ? (
-            <div className="space-y-2">
-              {todoTasks.map((task) => (
-                <TaskCard
-                  key={task.id}
-                  task={task}
-                  onClick={() => setEditingTask(task)}
-                  onDragStart={(e) => handleDragStart(e, task)}
-                  onDragEnd={handleDragEnd}
-                  isDragging={draggingTask?.id === task.id}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-32 text-center">
-              <p className="text-xs text-muted-foreground">No tasks yet</p>
+          <div onDragLeave={handleTodoDragLeave} className="space-y-2">
+            {todoTasks.map((task) => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                onClick={() => setEditingTask(task)}
+                onDragStart={(e) => handleDragStart(e, task)}
+                onDragEnd={handleDragEnd}
+                isDragging={draggingTask?.id === task.id}
+              />
+            ))}
+            {isTodoDropTarget ? (
+              <div className="flex flex-col items-center justify-center h-16 text-center">
+                <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
+                  Drop to move back to Todo
+                </p>
+              </div>
+            ) : (
               <Button
                 variant="ghost"
                 size="sm"
-                className="mt-2 gap-1 border border-dashed border-transparent hover:border-muted-foreground/50 hover:bg-muted transition-all"
+                className="w-full gap-1 border border-dashed border-transparent hover:border-muted-foreground/50 hover:bg-muted transition-all"
                 onClick={() => setAddTaskOpen(true)}
               >
                 <Plus className="h-3 w-3" />
                 Add task
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </KanbanColumn>
 
         {/* Prompts Column */}
         <KanbanColumn
           title="Prompts"
-          count={prompts.length}
+          count={promptsForTodoTasks.length}
           color="bg-purple-500/20 text-purple-700 dark:text-purple-300"
           onDragOver={handlePromptDragOver}
           onDrop={handlePromptDrop}
@@ -400,8 +564,8 @@ export function ProjectKanban({
           isGenerating={isGeneratingPrompt}
         >
           <div onDragLeave={handlePromptDragLeave} className="space-y-2">
-            {prompts.length > 0 ? (
-              prompts.map((prompt) => (
+            {promptsForTodoTasks.length > 0 ? (
+              promptsForTodoTasks.map((prompt) => (
                 <PromptCard
                   key={prompt.id}
                   prompt={prompt}
@@ -444,16 +608,19 @@ export function ProjectKanban({
         >
           <div onDragLeave={handleInProgressDragLeave} className="space-y-2">
             {inProgressTasks.length > 0 ? (
-              inProgressTasks.map((task) => (
-                <TaskCard
-                  key={task.id}
-                  task={task}
-                  onClick={() => setEditingTask(task)}
-                  onDragStart={(e) => handleDragStart(e, task)}
-                  onDragEnd={handleDragEnd}
-                  isDragging={draggingTask?.id === task.id}
-                />
-              ))
+              inProgressTasks.map((task) => {
+                const prompt = taskToPrompt.get(task.id);
+                return (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    onClick={() => prompt ? setEditingPrompt(prompt) : setEditingTask(task)}
+                    onDragStart={(e) => handleDragStart(e, task)}
+                    onDragEnd={handleDragEnd}
+                    isDragging={draggingTask?.id === task.id}
+                  />
+                );
+              })
             ) : (
               <div className="flex flex-col items-center justify-center h-32 text-center">
                 {isInProgressDropTarget ? (
@@ -473,10 +640,13 @@ export function ProjectKanban({
           title="Done"
           count={completedTasks.length}
           color="bg-green-500/20 text-green-700 dark:text-green-300"
+          onDragOver={handleDoneDragOver}
+          onDrop={handleDoneDrop}
+          isDropTarget={isDoneDropTarget}
         >
-          {completedTasks.length > 0 ? (
-            <div className="space-y-2">
-              {completedTasks.map((task) => (
+          <div onDragLeave={handleDoneDragLeave} className="space-y-2">
+            {completedTasks.length > 0 ? (
+              completedTasks.map((task) => (
                 <TaskCard
                   key={task.id}
                   task={task}
@@ -485,14 +655,26 @@ export function ProjectKanban({
                   onDragEnd={handleDragEnd}
                   isDragging={draggingTask?.id === task.id}
                 />
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-32 text-center">
-              <p className="text-xs text-muted-foreground">Nothing completed yet</p>
-            </div>
-          )}
+              ))
+            ) : (
+              <div className="flex flex-col items-center justify-center h-32 text-center">
+                {isDoneDropTarget ? (
+                  <p className="text-xs text-green-600 dark:text-green-400 font-medium">
+                    Drop to mark complete
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Nothing completed yet</p>
+                )}
+              </div>
+            )}
+          </div>
         </KanbanColumn>
+      </div>
+
+      {/* Activity Feed & Insights Panels */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+        <ActivityFeed activities={activities} />
+        <InsightsPanel tasks={tasks} prompts={prompts} />
       </div>
     </>
   );
