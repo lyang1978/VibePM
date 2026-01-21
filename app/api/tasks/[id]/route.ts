@@ -14,6 +14,9 @@ export async function GET(
       include: {
         prompts: true,
         images: true,
+        steps: {
+          orderBy: { order: "asc" },
+        },
       },
     });
 
